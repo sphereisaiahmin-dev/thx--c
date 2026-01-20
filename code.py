@@ -29,8 +29,9 @@ OSCILLATE_MIN = 10
 OSCILLATE_MAX = 140
 OSCILLATE_SPEED = 2.2
 BASE_NOTE_WHITE = 150
+BASE_NOTE_COLOR = (BASE_NOTE_WHITE, BASE_NOTE_WHITE, BASE_NOTE_WHITE)
 
-active_chord_notes = set()
+active_chord_notes = []
 
 def oscillating_channel(time_value, phase):
     span = OSCILLATE_MAX - OSCILLATE_MIN
@@ -40,13 +41,22 @@ def note_to_key_index(note):
     return (note - 60) % 12
 
 def set_active_chord_notes(notes):
+    previous_notes = list(active_chord_notes)
     active_chord_notes.clear()
     for note in notes:
-        active_chord_notes.add(note_to_key_index(note))
+        index = note_to_key_index(note)
+        if index not in active_chord_notes:
+            active_chord_notes.append(index)
+    for index in previous_notes:
+        if index not in active_chord_notes:
+            set_led_scaled(index, *BASE_NOTE_COLOR)
+
+def clear_active_chord_notes():
+    for index in active_chord_notes:
+        set_led_scaled(index, *BASE_NOTE_COLOR)
+    active_chord_notes.clear()
 
 def update_note_leds(time_value):
-    for index in NOTE_KEY_INDICES:
-        set_led_scaled(index, BASE_NOTE_WHITE, BASE_NOTE_WHITE, BASE_NOTE_WHITE)
     if active_chord_notes:
         for offset, index in enumerate(active_chord_notes):
             set_led_scaled(
@@ -64,7 +74,7 @@ def update_note_leds(time_value):
         )
 
 for index in NOTE_KEY_INDICES:
-    set_led_scaled(index, BASE_NOTE_WHITE, BASE_NOTE_WHITE, BASE_NOTE_WHITE)
+    set_led_scaled(index, *BASE_NOTE_COLOR)
 for index in MODIFIER_KEY_INDICES:
     set_led_scaled(index, 0, 0, 0)
 
@@ -82,7 +92,7 @@ def play_chord(messages):
 
 def stop_chord(messages):
     midi.send(messages)
-    active_chord_notes.clear()
+    clear_active_chord_notes()
 
 while True:
     keybow.update()
@@ -122,7 +132,7 @@ while True:
                        NoteOff(84, 0),
                        NoteOff(85, 0),
                        NoteOff(86, 0)])
-            active_chord_notes.clear()
+            clear_active_chord_notes()
 
 
     if keys[14].pressed:
@@ -157,7 +167,7 @@ while True:
                        NoteOff(84, 0),
                        NoteOff(85, 0),
                        NoteOff(86, 0)])
-            active_chord_notes.clear()
+            clear_active_chord_notes()
 
 
     if keys[13].pressed:
@@ -192,7 +202,7 @@ while True:
                        NoteOff(84, 0),
                        NoteOff(85, 0),
                        NoteOff(86, 0)])
-            active_chord_notes.clear()
+            clear_active_chord_notes()
 
 
     if keys[12].pressed:
@@ -227,7 +237,7 @@ while True:
                        NoteOff(84, 0),
                        NoteOff(85, 0),
                        NoteOff(86, 0)])
-            active_chord_notes.clear()
+            clear_active_chord_notes()
 
                       #Single note
     if not keys[15].pressed and not keys[14].pressed \
