@@ -12,24 +12,40 @@ from adafruit_midi.note_on import NoteOn
 keybow = Keybow2040(Hardware())
 keys = keybow.keys
 
-keybow.set_led(0, 100, 100, 100)
-keybow.set_led(1, 50, 100, 10)
-keybow.set_led(2, 100, 100, 100)
-keybow.set_led(3, 50, 100, 10)
-keybow.set_led(4, 100, 100, 100)
-keybow.set_led(5, 100, 100, 100)
-keybow.set_led(6, 50, 100, 10)
-keybow.set_led(7, 100, 100, 100)
-keybow.set_led(8, 50, 100, 10)
-keybow.set_led(9, 100, 100, 100)
-keybow.set_led(10, 50, 100, 10)
-keybow.set_led(11, 100, 100, 100)
-keybow.set_led(12, 200, 100, 100)
-keybow.set_led(13, 100, 200, 100)
-keybow.set_led(14, 100, 100, 200)
-keybow.set_led(15, 100, 50, 100)
+BRIGHTNESS_SCALE = 0.9
+
+def set_led_scaled(index, red, green, blue):
+    keybow.set_led(
+        index,
+        int(red * BRIGHTNESS_SCALE),
+        int(green * BRIGHTNESS_SCALE),
+        int(blue * BRIGHTNESS_SCALE),
+    )
+
+set_led_scaled(0, 100, 100, 100)
+set_led_scaled(1, 50, 100, 10)
+set_led_scaled(2, 100, 100, 100)
+set_led_scaled(3, 50, 100, 10)
+set_led_scaled(4, 100, 100, 100)
+set_led_scaled(5, 100, 100, 100)
+set_led_scaled(6, 50, 100, 10)
+set_led_scaled(7, 100, 100, 100)
+set_led_scaled(8, 50, 100, 10)
+set_led_scaled(9, 100, 100, 100)
+set_led_scaled(10, 50, 100, 10)
+set_led_scaled(11, 100, 100, 100)
+set_led_scaled(12, 200, 100, 100)
+set_led_scaled(13, 100, 200, 100)
+set_led_scaled(14, 100, 100, 200)
+set_led_scaled(15, 100, 50, 100)
 
 midi = adafruit_midi.MIDI(midi_out=usb_midi.ports[1], out_channel=0)
+ROLL_DELAY = 0.012
+
+def roll_chord(messages, delay=ROLL_DELAY):
+    for message in messages:
+        midi.send(message)
+        time.sleep(delay)
 
 while True:
     keybow.update()
@@ -448,7 +464,7 @@ while True:
         @keybow.on_press(C)
         def press_handler(C):
 
-            midi.send([NoteOn(60, 127),
+            roll_chord([NoteOn(60, 127),
                        NoteOn(64, 127),
                        NoteOn(67, 127)])
 
@@ -463,7 +479,7 @@ while True:
         @keybow.on_press(Db)
         def press_handler(Db):
 
-            midi.send([NoteOn(61, 127),
+            roll_chord([NoteOn(61, 127),
                        NoteOn(65, 127),
                        NoteOn(68, 127)])
 
@@ -478,7 +494,7 @@ while True:
         @keybow.on_press(D)
         def press_handler(D):
 
-            midi.send([NoteOn(62, 127),
+            roll_chord([NoteOn(62, 127),
                        NoteOn(66, 127),
                        NoteOn(69, 127)])
 
@@ -493,7 +509,7 @@ while True:
         @keybow.on_press(Eb)
         def press_handler(Eb):
 
-            midi.send([NoteOn(63, 127),
+            roll_chord([NoteOn(63, 127),
                        NoteOn(67, 127),
                        NoteOn(70, 127)])
 
@@ -508,7 +524,7 @@ while True:
         @keybow.on_press(E)
         def press_handler(E):
 
-            midi.send([NoteOn(64, 127),
+            roll_chord([NoteOn(64, 127),
                        NoteOn(68, 127),
                        NoteOn(71, 127)])
 
@@ -523,7 +539,7 @@ while True:
         @keybow.on_press(F)
         def press_handler(F):
 
-            midi.send([NoteOn(65, 127),
+            roll_chord([NoteOn(65, 127),
                        NoteOn(69, 127),
                        NoteOn(72, 127)])
 
@@ -538,7 +554,7 @@ while True:
         @keybow.on_press(Gb)
         def press_handler(Gb):
 
-            midi.send([NoteOn(66, 127),
+            roll_chord([NoteOn(66, 127),
                        NoteOn(70, 127),
                        NoteOn(73, 127)])
 
@@ -553,7 +569,7 @@ while True:
         @keybow.on_press(G)
         def press_handler(G):
 
-            midi.send([NoteOn(67, 127),
+            roll_chord([NoteOn(67, 127),
                        NoteOn(71, 127),
                        NoteOn(74, 127)])
 
@@ -568,7 +584,7 @@ while True:
         @keybow.on_press(Ab)
         def press_handler(Ab):
 
-            midi.send([NoteOn(68, 127),
+            roll_chord([NoteOn(68, 127),
                        NoteOn(72, 127),
                        NoteOn(75, 127)])
 
@@ -583,7 +599,7 @@ while True:
         @keybow.on_press(A)
         def press_handler(A):
 
-            midi.send([NoteOn(69, 127),
+            roll_chord([NoteOn(69, 127),
                        NoteOn(73, 127),
                        NoteOn(76, 127)])
 
@@ -598,7 +614,7 @@ while True:
         @keybow.on_press(Bb)
         def press_handler(Bb):
 
-            midi.send([NoteOn(70, 127),
+            roll_chord([NoteOn(70, 127),
                        NoteOn(74, 127),
                        NoteOn(77, 127)])
 
@@ -613,7 +629,7 @@ while True:
         @keybow.on_press(B)
         def press_handler(B):
 
-            midi.send([NoteOn(71, 127),
+            roll_chord([NoteOn(71, 127),
                        NoteOn(75, 127),
                        NoteOn(78, 127)])
 
@@ -632,7 +648,7 @@ while True:
         @keybow.on_press(C)
         def press_handler(C):
 
-            midi.send([NoteOn(60, 127),
+            roll_chord([NoteOn(60, 127),
                        NoteOn(63, 127),
                        NoteOn(67, 127)])
 
@@ -647,7 +663,7 @@ while True:
         @keybow.on_press(Db)
         def press_handler(Db):
 
-            midi.send([NoteOn(61, 127),
+            roll_chord([NoteOn(61, 127),
                        NoteOn(64, 127),
                        NoteOn(68, 127)])
 
@@ -661,7 +677,7 @@ while True:
         @keybow.on_press(D)
         def press_handler(D):
 
-            midi.send([NoteOn(62, 127),
+            roll_chord([NoteOn(62, 127),
                        NoteOn(65, 127),
                        NoteOn(69, 127)])
 
@@ -676,7 +692,7 @@ while True:
         @keybow.on_press(Eb)
         def press_handler(Eb):
 
-            midi.send([NoteOn(63, 127),
+            roll_chord([NoteOn(63, 127),
                        NoteOn(66, 127),
                        NoteOn(70, 127)])
 
@@ -691,7 +707,7 @@ while True:
         @keybow.on_press(E)
         def press_handler(E):
 
-            midi.send([NoteOn(64, 127),
+            roll_chord([NoteOn(64, 127),
                        NoteOn(67, 127),
                        NoteOn(71, 127)])
 
@@ -706,7 +722,7 @@ while True:
         @keybow.on_press(F)
         def press_handler(F):
 
-            midi.send([NoteOn(65, 127),
+            roll_chord([NoteOn(65, 127),
                        NoteOn(68, 127),
                        NoteOn(72, 127)])
 
@@ -721,7 +737,7 @@ while True:
         @keybow.on_press(Gb)
         def press_handler(Gb):
 
-            midi.send([NoteOn(66, 127),
+            roll_chord([NoteOn(66, 127),
                        NoteOn(69, 127),
                        NoteOn(73, 127)])
 
@@ -736,7 +752,7 @@ while True:
         @keybow.on_press(G)
         def press_handler(G):
 
-            midi.send([NoteOn(67, 127),
+            roll_chord([NoteOn(67, 127),
                        NoteOn(70, 127),
                        NoteOn(74, 127)])
 
@@ -751,7 +767,7 @@ while True:
         @keybow.on_press(Ab)
         def press_handler(Ab):
 
-            midi.send([NoteOn(68, 127),
+            roll_chord([NoteOn(68, 127),
                        NoteOn(71, 127),
                        NoteOn(75, 127)])
 
@@ -766,7 +782,7 @@ while True:
         @keybow.on_press(A)
         def press_handler(A):
 
-            midi.send([NoteOn(69, 127),
+            roll_chord([NoteOn(69, 127),
                        NoteOn(72, 127),
                        NoteOn(76, 127)])
 
@@ -781,7 +797,7 @@ while True:
         @keybow.on_press(Bb)
         def press_handler(Bb):
 
-            midi.send([NoteOn(70, 127),
+            roll_chord([NoteOn(70, 127),
                        NoteOn(73, 127),
                        NoteOn(77, 127)])
 
@@ -796,7 +812,7 @@ while True:
         @keybow.on_press(B)
         def press_handler(B):
 
-            midi.send([NoteOn(71, 127),
+            roll_chord([NoteOn(71, 127),
                        NoteOn(74, 127),
                        NoteOn(78, 127)])
 
@@ -815,7 +831,7 @@ while True:
         @keybow.on_press(C)
         def press_handler(C):
 
-            midi.send([NoteOn(60, 127),
+            roll_chord([NoteOn(60, 127),
                        NoteOn(64, 127),
                        NoteOn(71, 127)])
 
@@ -830,7 +846,7 @@ while True:
         @keybow.on_press(Db)
         def press_handler(Db):
 
-            midi.send([NoteOn(61, 127),
+            roll_chord([NoteOn(61, 127),
                        NoteOn(65, 127),
                        NoteOn(72, 127)])
        
@@ -845,7 +861,7 @@ while True:
         @keybow.on_press(D)
         def press_handler(D):
 
-            midi.send([NoteOn(62, 127),
+            roll_chord([NoteOn(62, 127),
                        NoteOn(66, 127),
                        NoteOn(73, 127)])
        
@@ -860,7 +876,7 @@ while True:
         @keybow.on_press(Eb)
         def press_handler(Eb):
 
-            midi.send([NoteOn(63, 127),
+            roll_chord([NoteOn(63, 127),
                        NoteOn(67, 127),
                        NoteOn(74, 127)])
        
@@ -875,7 +891,7 @@ while True:
         @keybow.on_press(E)
         def press_handler(E):
 
-            midi.send([NoteOn(64, 127),
+            roll_chord([NoteOn(64, 127),
                        NoteOn(68, 127),
                        NoteOn(75, 127)])
 
@@ -890,7 +906,7 @@ while True:
         @keybow.on_press(F)
         def press_handler(F):
 
-            midi.send([NoteOn(65, 127),
+            roll_chord([NoteOn(65, 127),
                        NoteOn(69, 127),
                        NoteOn(76, 127)])
        
@@ -905,7 +921,7 @@ while True:
         @keybow.on_press(Gb)
         def press_handler(Gb):
 
-            midi.send([NoteOn(66, 127),
+            roll_chord([NoteOn(66, 127),
                        NoteOn(70, 127),
                        NoteOn(77, 127)])
        
@@ -920,7 +936,7 @@ while True:
         @keybow.on_press(G)
         def press_handler(G):
 
-            midi.send([NoteOn(67, 127),
+            roll_chord([NoteOn(67, 127),
                        NoteOn(71, 127),
                        NoteOn(78, 127)])
        
@@ -935,7 +951,7 @@ while True:
         @keybow.on_press(Ab)
         def press_handler(Ab):
 
-            midi.send([NoteOn(68, 127),
+            roll_chord([NoteOn(68, 127),
                        NoteOn(72, 127),
                        NoteOn(79, 127)])
        
@@ -950,7 +966,7 @@ while True:
         @keybow.on_press(A)
         def press_handler(A):
 
-            midi.send([NoteOn(69, 127),
+            roll_chord([NoteOn(69, 127),
                        NoteOn(73, 127),
                        NoteOn(80, 127)])
 
@@ -965,7 +981,7 @@ while True:
         @keybow.on_press(Bb)
         def press_handler(Bb):
 
-            midi.send([NoteOn(70, 127),
+            roll_chord([NoteOn(70, 127),
                        NoteOn(74, 127),
                        NoteOn(81, 127)])
 
@@ -980,7 +996,7 @@ while True:
         @keybow.on_press(B)
         def press_handler(B):
 
-            midi.send([NoteOn(71, 127),
+            roll_chord([NoteOn(71, 127),
                        NoteOn(75, 127),
                        NoteOn(82, 127)])
 
@@ -998,7 +1014,7 @@ while True:
         @keybow.on_press(C)
         def press_handler(C):
 
-            midi.send([NoteOn(60, 127),
+            roll_chord([NoteOn(60, 127),
                        NoteOn(63, 127),
                        NoteOn(70, 127)])
 
@@ -1013,7 +1029,7 @@ while True:
         @keybow.on_press(Db)
         def press_handler(Db):
 
-            midi.send([NoteOn(61, 127),
+            roll_chord([NoteOn(61, 127),
                        NoteOn(64, 127),
                        NoteOn(71, 127)])
        
@@ -1028,7 +1044,7 @@ while True:
         @keybow.on_press(D)
         def press_handler(D):
 
-            midi.send([NoteOn(62, 127),
+            roll_chord([NoteOn(62, 127),
                        NoteOn(65, 127),
                        NoteOn(72, 127)])
 
@@ -1043,7 +1059,7 @@ while True:
         @keybow.on_press(Eb)
         def press_handler(Eb):
 
-            midi.send([NoteOn(63, 127),
+            roll_chord([NoteOn(63, 127),
                        NoteOn(66, 127),
                        NoteOn(73, 127)])
 
@@ -1058,7 +1074,7 @@ while True:
         @keybow.on_press(E)
         def press_handler(E):
 
-            midi.send([NoteOn(64, 127),
+            roll_chord([NoteOn(64, 127),
                        NoteOn(67, 127),
                        NoteOn(74, 127)])
 
@@ -1073,7 +1089,7 @@ while True:
         @keybow.on_press(F)
         def press_handler(F):
 
-            midi.send([NoteOn(65, 127),
+            roll_chord([NoteOn(65, 127),
                        NoteOn(68, 127),
                        NoteOn(75, 127)])
 
@@ -1088,7 +1104,7 @@ while True:
         @keybow.on_press(Gb)
         def press_handler(Gb):
 
-            midi.send([NoteOn(66, 127),
+            roll_chord([NoteOn(66, 127),
                        NoteOn(69, 127),
                        NoteOn(76, 127)])
 
@@ -1103,7 +1119,7 @@ while True:
         @keybow.on_press(G)
         def press_handler(G):
 
-            midi.send([NoteOn(67, 127),
+            roll_chord([NoteOn(67, 127),
                        NoteOn(70, 127),
                        NoteOn(77, 127)])
 
@@ -1118,7 +1134,7 @@ while True:
         @keybow.on_press(Ab)
         def press_handler(Ab):
 
-            midi.send([NoteOn(68, 127),
+            roll_chord([NoteOn(68, 127),
                        NoteOn(71, 127),
                        NoteOn(78, 127)])
 
@@ -1133,7 +1149,7 @@ while True:
         @keybow.on_press(A)
         def press_handler(A):
 
-            midi.send([NoteOn(69, 127),
+            roll_chord([NoteOn(69, 127),
                        NoteOn(72, 127),
                        NoteOn(79, 127)])
 
@@ -1148,7 +1164,7 @@ while True:
         @keybow.on_press(Bb)
         def press_handler(Bb):
 
-            midi.send([NoteOn(70, 127),
+            roll_chord([NoteOn(70, 127),
                        NoteOn(73, 127),
                        NoteOn(80, 127)])
 
@@ -1163,7 +1179,7 @@ while True:
         @keybow.on_press(B)
         def press_handler(B):
 
-            midi.send([NoteOn(71, 127),
+            roll_chord([NoteOn(71, 127),
                        NoteOn(74, 127),
                        NoteOn(81, 127)])
 
