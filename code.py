@@ -30,7 +30,7 @@ OSCILLATE_MAX = 140
 OSCILLATE_SPEED = 2.2
 BASE_NOTE_WHITE = 150
 
-active_chord_notes = set()
+active_chord_notes = []
 
 def oscillating_channel(time_value, phase):
     span = OSCILLATE_MAX - OSCILLATE_MIN
@@ -41,8 +41,13 @@ def note_to_key_index(note):
 
 def set_active_chord_notes(notes):
     active_chord_notes.clear()
+    seen = set()
     for note in notes:
-        active_chord_notes.add(note_to_key_index(note))
+        key_index = note_to_key_index(note)
+        if key_index in seen:
+            continue
+        seen.add(key_index)
+        active_chord_notes.append(key_index)
 
 def update_note_leds(time_value):
     for index in NOTE_KEY_INDICES:
@@ -874,6 +879,7 @@ while True:
         def press_handler(C):
 
             play_chord([NoteOn(60, 127),
+                       NoteOn(63, 127),
                        NoteOn(64, 127),
                        NoteOn(71, 127)])
 
@@ -881,6 +887,7 @@ while True:
         def release_handler(C):
 
             stop_chord([NoteOff(60, 0),
+                       NoteOff(63, 0),
                        NoteOff(64, 0),
                        NoteOff(71, 0)])
 
@@ -889,6 +896,7 @@ while True:
         def press_handler(Db):
 
             play_chord([NoteOn(61, 127),
+                       NoteOn(64, 127),
                        NoteOn(65, 127),
                        NoteOn(72, 127)])
        
@@ -896,6 +904,7 @@ while True:
         def release_handler(Db):
 
             stop_chord([NoteOff(61, 0),
+                       NoteOff(64, 0),
                        NoteOff(65, 0),
                        NoteOff(72, 0)])
 
@@ -904,6 +913,7 @@ while True:
         def press_handler(D):
 
             play_chord([NoteOn(62, 127),
+                       NoteOn(65, 127),
                        NoteOn(66, 127),
                        NoteOn(73, 127)])
        
@@ -911,6 +921,7 @@ while True:
         def release_handler(D):
 
             stop_chord([NoteOff(62, 0),
+                       NoteOff(65, 0),
                        NoteOff(66, 0),
                        NoteOff(73, 0)])
 
@@ -919,6 +930,7 @@ while True:
         def press_handler(Eb):
 
             play_chord([NoteOn(63, 127),
+                       NoteOn(66, 127),
                        NoteOn(67, 127),
                        NoteOn(74, 127)])
        
@@ -926,6 +938,7 @@ while True:
         def release_handler(Eb):
 
             stop_chord([NoteOff(63, 0),
+                       NoteOff(66, 0),
                        NoteOff(67, 0),
                        NoteOff(74, 0)])
 
@@ -934,6 +947,7 @@ while True:
         def press_handler(E):
 
             play_chord([NoteOn(64, 127),
+                       NoteOn(67, 127),
                        NoteOn(68, 127),
                        NoteOn(75, 127)])
 
@@ -941,6 +955,7 @@ while True:
         def release_handler(E):
 
             stop_chord([NoteOff(64, 0),
+                       NoteOff(67, 0),
                        NoteOff(68, 0),
                        NoteOff(75, 0)])
 
@@ -949,6 +964,7 @@ while True:
         def press_handler(F):
 
             play_chord([NoteOn(65, 127),
+                       NoteOn(68, 127),
                        NoteOn(69, 127),
                        NoteOn(76, 127)])
        
@@ -956,6 +972,7 @@ while True:
         def release_handler(F):
 
             stop_chord([NoteOff(65, 0),
+                       NoteOff(68, 0),
                        NoteOff(69, 0),
                        NoteOff(76, 0)])
 
@@ -964,6 +981,7 @@ while True:
         def press_handler(Gb):
 
             play_chord([NoteOn(66, 127),
+                       NoteOn(69, 127),
                        NoteOn(70, 127),
                        NoteOn(77, 127)])
        
@@ -971,6 +989,7 @@ while True:
         def release_handler(Gb):
 
             stop_chord([NoteOff(66, 0),
+                       NoteOff(69, 0),
                        NoteOff(70, 0),
                        NoteOff(77, 0)])
 
@@ -979,6 +998,7 @@ while True:
         def press_handler(G):
 
             play_chord([NoteOn(67, 127),
+                       NoteOn(70, 127),
                        NoteOn(71, 127),
                        NoteOn(78, 127)])
        
@@ -986,6 +1006,7 @@ while True:
         def release_handler(G):
 
             stop_chord([NoteOff(67, 0),
+                       NoteOff(70, 0),
                        NoteOff(71, 0),
                        NoteOff(78, 0)])
 
@@ -994,6 +1015,7 @@ while True:
         def press_handler(Ab):
 
             play_chord([NoteOn(68, 127),
+                       NoteOn(71, 127),
                        NoteOn(72, 127),
                        NoteOn(79, 127)])
        
@@ -1001,6 +1023,7 @@ while True:
         def release_handler(Ab):
 
             stop_chord([NoteOff(68, 0),
+                       NoteOff(71, 0),
                        NoteOff(72, 0),
                        NoteOff(79, 0)])
 
@@ -1009,6 +1032,7 @@ while True:
         def press_handler(A):
 
             play_chord([NoteOn(69, 127),
+                       NoteOn(72, 127),
                        NoteOn(73, 127),
                        NoteOn(80, 127)])
 
@@ -1016,6 +1040,7 @@ while True:
         def release_handler(A):
 
             stop_chord([NoteOff(69, 0),
+                       NoteOff(72, 0),
                        NoteOff(73, 0),
                        NoteOff(80, 0)])
 
@@ -1024,6 +1049,7 @@ while True:
         def press_handler(Bb):
 
             play_chord([NoteOn(70, 127),
+                       NoteOn(73, 127),
                        NoteOn(74, 127),
                        NoteOn(81, 127)])
 
@@ -1031,6 +1057,7 @@ while True:
         def release_handler(Bb):
 
             stop_chord([NoteOff(70, 0),
+                       NoteOff(73, 0),
                        NoteOff(74, 0),
                        NoteOff(81, 0)])
 
@@ -1039,6 +1066,7 @@ while True:
         def press_handler(B):
 
             play_chord([NoteOn(71, 127),
+                       NoteOn(74, 127),
                        NoteOn(75, 127),
                        NoteOn(82, 127)])
 
@@ -1046,6 +1074,7 @@ while True:
         def release_handler(B):
 
             stop_chord([NoteOff(71, 0),
+                       NoteOff(74, 0),
                        NoteOff(75, 0),
                        NoteOff(82, 0)])
 
@@ -1058,6 +1087,7 @@ while True:
 
             play_chord([NoteOn(60, 127),
                        NoteOn(63, 127),
+                       NoteOn(64, 127),
                        NoteOn(70, 127)])
 
         @keybow.on_release(C)
@@ -1065,6 +1095,7 @@ while True:
 
             stop_chord([NoteOff(60, 0),
                        NoteOff(63, 0),
+                       NoteOff(64, 0),
                        NoteOff(70, 0)])
 
         Db = keys[1]
@@ -1073,6 +1104,7 @@ while True:
 
             play_chord([NoteOn(61, 127),
                        NoteOn(64, 127),
+                       NoteOn(65, 127),
                        NoteOn(71, 127)])
        
         @keybow.on_release(Db)
@@ -1080,6 +1112,7 @@ while True:
 
             stop_chord([NoteOff(61, 0),
                        NoteOff(64, 0),
+                       NoteOff(65, 0),
                        NoteOff(71, 0)])
 
         D = keys[2]
@@ -1088,6 +1121,7 @@ while True:
 
             play_chord([NoteOn(62, 127),
                        NoteOn(65, 127),
+                       NoteOn(66, 127),
                        NoteOn(72, 127)])
 
         @keybow.on_release(D)
@@ -1095,6 +1129,7 @@ while True:
 
             stop_chord([NoteOff(62, 0),
                        NoteOff(65, 0),
+                       NoteOff(66, 0),
                        NoteOff(72, 0)])
 
         Eb = keys[3]
@@ -1103,6 +1138,7 @@ while True:
 
             play_chord([NoteOn(63, 127),
                        NoteOn(66, 127),
+                       NoteOn(67, 127),
                        NoteOn(73, 127)])
 
         @keybow.on_release(Eb)
@@ -1110,6 +1146,7 @@ while True:
 
             stop_chord([NoteOff(63, 0),
                        NoteOff(66, 0),
+                       NoteOff(67, 0),
                        NoteOff(73, 0)])
 
         E = keys[4]
@@ -1118,6 +1155,7 @@ while True:
 
             play_chord([NoteOn(64, 127),
                        NoteOn(67, 127),
+                       NoteOn(68, 127),
                        NoteOn(74, 127)])
 
         @keybow.on_release(E)
@@ -1125,6 +1163,7 @@ while True:
 
             stop_chord([NoteOff(64, 0),
                        NoteOff(67, 0),
+                       NoteOff(68, 0),
                        NoteOff(74, 0)])
 
         F = keys[5]
@@ -1133,6 +1172,7 @@ while True:
 
             play_chord([NoteOn(65, 127),
                        NoteOn(68, 127),
+                       NoteOn(69, 127),
                        NoteOn(75, 127)])
 
         @keybow.on_release(F)
@@ -1140,6 +1180,7 @@ while True:
 
             stop_chord([NoteOff(65, 0),
                        NoteOff(68, 0),
+                       NoteOff(69, 0),
                        NoteOff(75, 0)])
 
         Gb = keys[6]
@@ -1148,6 +1189,7 @@ while True:
 
             play_chord([NoteOn(66, 127),
                        NoteOn(69, 127),
+                       NoteOn(70, 127),
                        NoteOn(76, 127)])
 
         @keybow.on_release(Gb)
@@ -1155,6 +1197,7 @@ while True:
 
             stop_chord([NoteOff(66, 0),
                        NoteOff(69, 0),
+                       NoteOff(70, 0),
                        NoteOff(76, 0)])
 
         G = keys[7]
@@ -1163,6 +1206,7 @@ while True:
 
             play_chord([NoteOn(67, 127),
                        NoteOn(70, 127),
+                       NoteOn(71, 127),
                        NoteOn(77, 127)])
 
         @keybow.on_release(G)
@@ -1170,6 +1214,7 @@ while True:
 
             stop_chord([NoteOff(67, 0),
                        NoteOff(70, 0),
+                       NoteOff(71, 0),
                        NoteOff(77, 0)])
 
         Ab = keys[8]
@@ -1178,6 +1223,7 @@ while True:
 
             play_chord([NoteOn(68, 127),
                        NoteOn(71, 127),
+                       NoteOn(72, 127),
                        NoteOn(78, 127)])
 
         @keybow.on_release(Ab)
@@ -1185,6 +1231,7 @@ while True:
 
             stop_chord([NoteOff(68, 0),
                        NoteOff(71, 0),
+                       NoteOff(72, 0),
                        NoteOff(78, 0)])
 
         A = keys[9]
@@ -1193,6 +1240,7 @@ while True:
 
             play_chord([NoteOn(69, 127),
                        NoteOn(72, 127),
+                       NoteOn(73, 127),
                        NoteOn(79, 127)])
 
         @keybow.on_release(A)
@@ -1200,6 +1248,7 @@ while True:
 
             stop_chord([NoteOff(69, 0),
                        NoteOff(72, 0),
+                       NoteOff(73, 0),
                        NoteOff(79, 0)])
 
         Bb = keys[10]
@@ -1208,6 +1257,7 @@ while True:
 
             play_chord([NoteOn(70, 127),
                        NoteOn(73, 127),
+                       NoteOn(74, 127),
                        NoteOn(80, 127)])
 
         @keybow.on_release(Bb)
@@ -1215,6 +1265,7 @@ while True:
 
             stop_chord([NoteOff(70, 0),
                        NoteOff(73, 0),
+                       NoteOff(74, 0),
                        NoteOff(80, 0)])
 
         B = keys[11]
@@ -1223,6 +1274,7 @@ while True:
 
             play_chord([NoteOn(71, 127),
                        NoteOn(74, 127),
+                       NoteOn(75, 127),
                        NoteOn(81, 127)])
 
         @keybow.on_release(B)
@@ -1230,4 +1282,5 @@ while True:
 
             stop_chord([NoteOff(71, 0),
                        NoteOff(74, 0),
+                       NoteOff(75, 0),
                        NoteOff(81, 0)])
