@@ -8,6 +8,10 @@ import usb_midi
 import adafruit_midi
 from adafruit_midi.note_off import NoteOff
 from adafruit_midi.note_on import NoteOn
+from adafruit_midi.timing_clock import TimingClock
+from adafruit_midi.start import Start
+from adafruit_midi.midi_continue import Continue
+from adafruit_midi.stop import Stop
 
 keybow = Keybow2040(Hardware())
 keys = keybow.keys
@@ -39,16 +43,86 @@ set_led_scaled(13, 100, 200, 100)
 set_led_scaled(14, 100, 100, 200)
 set_led_scaled(15, 100, 50, 100)
 
-midi = adafruit_midi.MIDI(midi_out=usb_midi.ports[1], out_channel=0)
+midi = adafruit_midi.MIDI(
+    midi_in=usb_midi.ports[0],
+    midi_out=usb_midi.ports[1],
+    out_channel=0
+)
 ROLL_DELAY = 0.012
+arp_enabled = False
+arp_running = False
+clock_count = 0
+arp_step_index = 0
+arp_chord_notes = []
+arp_active_note = None
+arp_toggle_latched = False
 
 def roll_chord(messages, delay=ROLL_DELAY):
+    global arp_chord_notes, arp_step_index, arp_active_note
+    if arp_enabled:
+        arp_chord_notes = [
+            message.note for message in messages if isinstance(message, NoteOn)
+        ]
+        arp_step_index = 0
+        if arp_active_note is not None:
+            midi.send(NoteOff(arp_active_note, 0))
+        arp_active_note = None
     for message in messages:
         midi.send(message)
         time.sleep(delay)
 
+def send_emergency_note_off():
+    midi.send([NoteOff(note, 0) for note in range(60, 87)])
+
 while True:
     keybow.update()
+    midi_message = midi.receive()
+    while midi_message:
+        if isinstance(midi_message, TimingClock):
+            if arp_enabled and arp_running and arp_chord_notes:
+                clock_count = (clock_count + 1) % 24
+                if clock_count % 12 == 0:
+                    if arp_active_note is not None:
+                        midi.send(NoteOff(arp_active_note, 0))
+                    note = arp_chord_notes[arp_step_index % len(arp_chord_notes)]
+                    midi.send(NoteOn(note, 127))
+                    arp_active_note = note
+                    arp_step_index = (arp_step_index + 1) % len(arp_chord_notes)
+        elif isinstance(midi_message, (Start, Continue)):
+            arp_running = True
+            clock_count = 0
+            arp_step_index = 0
+        elif isinstance(midi_message, Stop):
+            arp_running = False
+            if arp_active_note is not None:
+                midi.send(NoteOff(arp_active_note, 0))
+                arp_active_note = None
+            send_emergency_note_off()
+        midi_message = midi.receive()
+
+    if keys[15].pressed and keys[3].pressed:
+        if not arp_toggle_latched:
+            arp_enabled = not arp_enabled
+            arp_toggle_latched = True
+            if not arp_enabled:
+                arp_running = False
+                if arp_active_note is not None:
+                    midi.send(NoteOff(arp_active_note, 0))
+                    arp_active_note = None
+                arp_chord_notes = []
+                send_emergency_note_off()
+    else:
+        arp_toggle_latched = False
+
+    chord_modifier_held = (
+        keys[12].pressed or keys[13].pressed or keys[14].pressed or keys[15].pressed
+    )
+    note_key_held = any(keys[index].pressed for index in range(12))
+    if arp_enabled and (not chord_modifier_held or not note_key_held):
+        if arp_active_note is not None:
+            midi.send(NoteOff(arp_active_note, 0))
+            arp_active_note = None
+        arp_chord_notes = []
 
 #stops hanging notes 
 
