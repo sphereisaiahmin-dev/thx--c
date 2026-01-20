@@ -30,8 +30,16 @@ OSCILLATE_MAX = 140
 OSCILLATE_SPEED = 2.2
 BASE_NOTE_WHITE = 150
 BASE_NOTE_COLOR = (BASE_NOTE_WHITE, BASE_NOTE_WHITE, BASE_NOTE_WHITE)
+BASE_NOTE_OFFSET = -12
+OCTAVE_MODE_HOLD_SECONDS = 2.0
+OCTAVE_UP_KEY_INDEX = 3
+OCTAVE_DOWN_KEY_INDEX = 7
+F_KEY_INDEX = 5
 
 active_chord_notes = []
+f_hold_start = None
+octave_mode_active = False
+octave_offset = 0
 
 def oscillating_channel(time_value, phase):
     span = OSCILLATE_MAX - OSCILLATE_MIN
@@ -39,6 +47,29 @@ def oscillating_channel(time_value, phase):
 
 def note_to_key_index(note):
     return (note - 60) % 12
+
+def current_note_offset():
+    return BASE_NOTE_OFFSET + octave_offset
+
+def apply_note_offset(message):
+    if hasattr(message, "note"):
+        message.note += current_note_offset()
+
+def send_midi(message):
+    if isinstance(message, list):
+        for msg in message:
+            apply_note_offset(msg)
+    else:
+        apply_note_offset(message)
+    midi.send(message)
+
+def any_note_pressed(exclude_index=None):
+    for index in NOTE_KEY_INDICES:
+        if exclude_index is not None and index == exclude_index:
+            continue
+        if keys[index].pressed:
+            return True
+    return False
 
 def set_active_chord_notes(notes):
     previous_notes = list(active_chord_notes)
@@ -72,6 +103,9 @@ def update_note_leds(time_value):
             oscillating_channel(time_value, 2.7 + offset),
             oscillating_channel(time_value, 4.8 + offset),
         )
+    if octave_mode_active:
+        set_led_scaled(OCTAVE_UP_KEY_INDEX, *BASE_NOTE_COLOR)
+        set_led_scaled(OCTAVE_DOWN_KEY_INDEX, *BASE_NOTE_COLOR)
 
 for index in NOTE_KEY_INDICES:
     set_led_scaled(index, *BASE_NOTE_COLOR)
@@ -83,7 +117,7 @@ ROLL_DELAY = 0.012
 
 def roll_chord(messages, delay=ROLL_DELAY):
     for message in messages:
-        midi.send(message)
+        send_midi(message)
         time.sleep(delay)
 
 def play_chord(messages):
@@ -91,12 +125,37 @@ def play_chord(messages):
     roll_chord(messages)
 
 def stop_chord(messages):
-    midi.send(messages)
+    send_midi(messages)
     clear_active_chord_notes()
 
 while True:
     keybow.update()
     update_note_leds(time.monotonic() * OSCILLATE_SPEED)
+
+    if keys[F_KEY_INDEX].pressed:
+        if f_hold_start is None:
+            f_hold_start = time.monotonic()
+        if any_note_pressed(exclude_index=F_KEY_INDEX):
+            f_hold_start = time.monotonic()
+        if not octave_mode_active and not any_note_pressed(exclude_index=F_KEY_INDEX):
+            if time.monotonic() - f_hold_start >= OCTAVE_MODE_HOLD_SECONDS:
+                octave_mode_active = True
+                set_led_scaled(OCTAVE_UP_KEY_INDEX, *BASE_NOTE_COLOR)
+                set_led_scaled(OCTAVE_DOWN_KEY_INDEX, *BASE_NOTE_COLOR)
+        if octave_mode_active:
+            if keys[OCTAVE_UP_KEY_INDEX].pressed:
+                octave_offset = 12
+            elif keys[OCTAVE_DOWN_KEY_INDEX].pressed:
+                octave_offset = -12
+            else:
+                octave_offset = 0
+    else:
+        f_hold_start = None
+        if octave_mode_active or octave_offset:
+            octave_mode_active = False
+            octave_offset = 0
+            set_led_scaled(OCTAVE_UP_KEY_INDEX, *BASE_NOTE_COLOR)
+            set_led_scaled(OCTAVE_DOWN_KEY_INDEX, *BASE_NOTE_COLOR)
 
 #stops hanging notes 
 
@@ -105,7 +164,7 @@ while True:
         @keybow.on_release(M)
         def release_handler(M):
 
-            midi.send([NoteOff(60, 0),
+            send_midi([NoteOff(60, 0),
                        NoteOff(61, 0),
                        NoteOff(62, 0),
                        NoteOff(63, 0),
@@ -140,7 +199,7 @@ while True:
         @keybow.on_release(O)
         def release_handler(O):
 
-            midi.send([NoteOff(60, 0),
+            send_midi([NoteOff(60, 0),
                        NoteOff(61, 0),
                        NoteOff(62, 0),
                        NoteOff(63, 0),
@@ -175,7 +234,7 @@ while True:
         @keybow.on_release(D)
         def release_handler(D):
 
-            midi.send([NoteOff(60, 0),
+            send_midi([NoteOff(60, 0),
                        NoteOff(61, 0),
                        NoteOff(62, 0),
                        NoteOff(63, 0),
@@ -210,7 +269,7 @@ while True:
         @keybow.on_release(S)
         def release_handler(S):
 
-            midi.send([NoteOff(60, 0),
+            send_midi([NoteOff(60, 0),
                        NoteOff(61, 0),
                        NoteOff(62, 0),
                        NoteOff(63, 0),
@@ -246,133 +305,141 @@ while True:
         @keybow.on_press(C)
         def press_handler(C):
 
-            midi.send(NoteOn(60, 127))
+            send_midi(NoteOn(60, 127))
 
         @keybow.on_release(C)
         def release_handler(C):
 
-            midi.send(NoteOff(60, 0))
+            send_midi(NoteOff(60, 0))
 
         Db = keys[1]
         @keybow.on_press(Db)
         def press_handler(Db):
 
-            midi.send(NoteOn(61, 127))
+            send_midi(NoteOn(61, 127))
 
         @keybow.on_release(Db)
         def release_handler(Db):
 
-            midi.send(NoteOff(61, 0))
+            send_midi(NoteOff(61, 0))
 
         D = keys[2]
         @keybow.on_press(D)
         def press_handler(D):
 
-            midi.send(NoteOn(62, 127))
+            send_midi(NoteOn(62, 127))
 
         @keybow.on_release(D)
         def release_handler(D):
 
-            midi.send(NoteOff(62, 0))
+            send_midi(NoteOff(62, 0))
                       
         Eb = keys[3]
         @keybow.on_press(Eb)
         def press_handler(Eb):
+            if octave_mode_active:
+                return
 
-            midi.send(NoteOn(63, 127))
+            send_midi(NoteOn(63, 127))
 
         @keybow.on_release(Eb)
         def release_handler(Eb):
+            if octave_mode_active:
+                return
 
-            midi.send(NoteOff(63, 0))
+            send_midi(NoteOff(63, 0))
 
         E = keys[4]
         @keybow.on_press(E)
         def press_handler(E):
 
-            midi.send(NoteOn(64, 127))
+            send_midi(NoteOn(64, 127))
 
         @keybow.on_release(E)
         def release_handler(E):
 
-            midi.send(NoteOff(64, 0))
+            send_midi(NoteOff(64, 0))
 
         F = keys[5]
         @keybow.on_press(F)
         def press_handler(F):
 
-            midi.send(NoteOn(65, 127))
+            send_midi(NoteOn(65, 127))
 
         @keybow.on_release(F)
         def release_handler(F):
 
-            midi.send(NoteOff(65, 0))
+            send_midi(NoteOff(65, 0))
 
         Gb = keys[6]
         @keybow.on_press(Gb)
         def press_handler(Gb):
 
-            midi.send(NoteOn(66, 127))
+            send_midi(NoteOn(66, 127))
 
         @keybow.on_release(Gb)
         def release_handler(Gb):
 
-            midi.send(NoteOff(66, 0))
+            send_midi(NoteOff(66, 0))
 
         G = keys[7]
         @keybow.on_press(G)
         def press_handler(G):
+            if octave_mode_active:
+                return
 
-            midi.send(NoteOn(67, 127))
+            send_midi(NoteOn(67, 127))
 
         @keybow.on_release(G)
         def release_handler(G):
+            if octave_mode_active:
+                return
 
-            midi.send(NoteOff(67, 0))
+            send_midi(NoteOff(67, 0))
 
         Ab = keys[8]
         @keybow.on_press(Ab)
         def press_handler(Ab):
 
-            midi.send(NoteOn(68, 127))
+            send_midi(NoteOn(68, 127))
 
         @keybow.on_release(Ab)
         def release_handler(Ab):
 
-            midi.send(NoteOff(68, 0))
+            send_midi(NoteOff(68, 0))
 
         A = keys[9]
         @keybow.on_press(A)
         def press_handler(A):
 
-            midi.send(NoteOn(69, 127))
+            send_midi(NoteOn(69, 127))
 
         @keybow.on_release(A)
         def release_handler(A):
 
-            midi.send(NoteOff(69, 0))
+            send_midi(NoteOff(69, 0))
 
         Bb = keys[10]
         @keybow.on_press(Bb)
         def press_handler(Bb):
 
-            midi.send(NoteOn(70, 127))
+            send_midi(NoteOn(70, 127))
 
         @keybow.on_release(Bb)
         def release_handler(Bb):
 
-            midi.send(NoteOff(70, 0))
+            send_midi(NoteOff(70, 0))
 
         B = keys[11]
         @keybow.on_press(B)
         def press_handler(B):
 
-            midi.send(NoteOn(71, 127))
+            send_midi(NoteOn(71, 127))
 
         @keybow.on_release(B)
         def release_handler(B):
 
-            midi.send(NoteOff(71, 0))
+            send_midi(NoteOff(71, 0))
 
                       #Single note
     if not keys[15].pressed and not keys[14].pressed \
@@ -381,133 +448,141 @@ while True:
         @keybow.on_press(C)
         def press_handler(C):
 
-            midi.send(NoteOn(60, 127))
+            send_midi(NoteOn(60, 127))
 
         @keybow.on_release(C)
         def release_handler(C):
 
-            midi.send(NoteOff(60, 0))
+            send_midi(NoteOff(60, 0))
 
         Db = keys[1]
         @keybow.on_press(Db)
         def press_handler(Db):
 
-            midi.send(NoteOn(61, 127))
+            send_midi(NoteOn(61, 127))
 
         @keybow.on_release(Db)
         def release_handler(Db):
 
-            midi.send(NoteOff(61, 0))
+            send_midi(NoteOff(61, 0))
 
         D = keys[2]
         @keybow.on_press(D)
         def press_handler(D):
 
-            midi.send(NoteOn(62, 127))
+            send_midi(NoteOn(62, 127))
 
         @keybow.on_release(D)
         def release_handler(D):
 
-            midi.send(NoteOff(62, 0))
+            send_midi(NoteOff(62, 0))
                       
         Eb = keys[3]
         @keybow.on_press(Eb)
         def press_handler(Eb):
+            if octave_mode_active:
+                return
 
-            midi.send(NoteOn(63, 127))
+            send_midi(NoteOn(63, 127))
 
         @keybow.on_release(Eb)
         def release_handler(Eb):
+            if octave_mode_active:
+                return
 
-            midi.send(NoteOff(63, 0))
+            send_midi(NoteOff(63, 0))
 
         E = keys[4]
         @keybow.on_press(E)
         def press_handler(E):
 
-            midi.send(NoteOn(64, 127))
+            send_midi(NoteOn(64, 127))
 
         @keybow.on_release(E)
         def release_handler(E):
 
-            midi.send(NoteOff(64, 0))
+            send_midi(NoteOff(64, 0))
 
         F = keys[5]
         @keybow.on_press(F)
         def press_handler(F):
 
-            midi.send(NoteOn(65, 127))
+            send_midi(NoteOn(65, 127))
 
         @keybow.on_release(F)
         def release_handler(F):
 
-            midi.send(NoteOff(65, 0))
+            send_midi(NoteOff(65, 0))
 
         Gb = keys[6]
         @keybow.on_press(Gb)
         def press_handler(Gb):
 
-            midi.send(NoteOn(66, 127))
+            send_midi(NoteOn(66, 127))
 
         @keybow.on_release(Gb)
         def release_handler(Gb):
 
-            midi.send(NoteOff(66, 0))
+            send_midi(NoteOff(66, 0))
 
         G = keys[7]
         @keybow.on_press(G)
         def press_handler(G):
+            if octave_mode_active:
+                return
 
-            midi.send(NoteOn(67, 127))
+            send_midi(NoteOn(67, 127))
 
         @keybow.on_release(G)
         def release_handler(G):
+            if octave_mode_active:
+                return
 
-            midi.send(NoteOff(67, 0))
+            send_midi(NoteOff(67, 0))
 
         Ab = keys[8]
         @keybow.on_press(Ab)
         def press_handler(Ab):
 
-            midi.send(NoteOn(68, 127))
+            send_midi(NoteOn(68, 127))
 
         @keybow.on_release(Ab)
         def release_handler(Ab):
 
-            midi.send(NoteOff(68, 0))
+            send_midi(NoteOff(68, 0))
 
         A = keys[9]
         @keybow.on_press(A)
         def press_handler(A):
 
-            midi.send(NoteOn(69, 127))
+            send_midi(NoteOn(69, 127))
 
         @keybow.on_release(A)
         def release_handler(A):
 
-            midi.send(NoteOff(69, 0))
+            send_midi(NoteOff(69, 0))
 
         Bb = keys[10]
         @keybow.on_press(Bb)
         def press_handler(Bb):
 
-            midi.send(NoteOn(70, 127))
+            send_midi(NoteOn(70, 127))
 
         @keybow.on_release(Bb)
         def release_handler(Bb):
 
-            midi.send(NoteOff(70, 0))
+            send_midi(NoteOff(70, 0))
 
         B = keys[11]
         @keybow.on_press(B)
         def press_handler(B):
 
-            midi.send(NoteOn(71, 127))
+            send_midi(NoteOn(71, 127))
 
         @keybow.on_release(B)
         def release_handler(B):
 
-            midi.send(NoteOff(71, 0))
+            send_midi(NoteOff(71, 0))
 
                      #Major chord
     if keys[15].pressed and not keys[14].pressed \
