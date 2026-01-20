@@ -23,40 +23,50 @@ def set_led_scaled(index, red, green, blue):
         int(blue * BRIGHTNESS_SCALE),
     )
 
-BLACK_KEY_INDICES = (1, 3, 6, 8, 10)
+NOTE_KEY_INDICES = tuple(range(12))
+MODIFIER_KEY_INDICES = (12, 13, 14, 15)
 OSCILLATE_MIN = 10
 OSCILLATE_MAX = 140
 OSCILLATE_SPEED = 2.2
+BASE_NOTE_WHITE = 150
+
+active_chord_notes = set()
 
 def oscillating_channel(time_value, phase):
     span = OSCILLATE_MAX - OSCILLATE_MIN
     return OSCILLATE_MIN + int(span * (math.sin(time_value + phase) + 1) / 2)
 
-def update_black_key_leds(time_value):
-    for index in BLACK_KEY_INDICES:
+def note_to_key_index(note):
+    return (note - 60) % 12
+
+def set_active_chord_notes(notes):
+    active_chord_notes.clear()
+    for note in notes:
+        active_chord_notes.add(note_to_key_index(note))
+
+def update_note_leds(time_value):
+    for index in NOTE_KEY_INDICES:
+        set_led_scaled(index, BASE_NOTE_WHITE, BASE_NOTE_WHITE, BASE_NOTE_WHITE)
+    if active_chord_notes:
+        for offset, index in enumerate(active_chord_notes):
+            set_led_scaled(
+                index,
+                oscillating_channel(time_value, 0.0 + offset),
+                oscillating_channel(time_value, 2.1 + offset),
+                oscillating_channel(time_value, 4.2 + offset),
+            )
+    for offset, index in enumerate(MODIFIER_KEY_INDICES):
         set_led_scaled(
             index,
-            oscillating_channel(time_value, 0.0),
-            oscillating_channel(time_value, 2.1),
-            oscillating_channel(time_value, 4.2),
+            oscillating_channel(time_value, 0.6 + offset),
+            oscillating_channel(time_value, 2.7 + offset),
+            oscillating_channel(time_value, 4.8 + offset),
         )
 
-set_led_scaled(0, 100, 100, 100)
-set_led_scaled(1, 50, 100, 10)
-set_led_scaled(2, 100, 100, 100)
-set_led_scaled(3, 50, 100, 10)
-set_led_scaled(4, 100, 100, 100)
-set_led_scaled(5, 100, 100, 100)
-set_led_scaled(6, 50, 100, 10)
-set_led_scaled(7, 100, 100, 100)
-set_led_scaled(8, 50, 100, 10)
-set_led_scaled(9, 100, 100, 100)
-set_led_scaled(10, 50, 100, 10)
-set_led_scaled(11, 100, 100, 100)
-set_led_scaled(12, 200, 100, 100)
-set_led_scaled(13, 100, 200, 100)
-set_led_scaled(14, 100, 100, 200)
-set_led_scaled(15, 100, 50, 100)
+for index in NOTE_KEY_INDICES:
+    set_led_scaled(index, BASE_NOTE_WHITE, BASE_NOTE_WHITE, BASE_NOTE_WHITE)
+for index in MODIFIER_KEY_INDICES:
+    set_led_scaled(index, 0, 0, 0)
 
 midi = adafruit_midi.MIDI(midi_out=usb_midi.ports[1], out_channel=0)
 ROLL_DELAY = 0.012
@@ -66,9 +76,17 @@ def roll_chord(messages, delay=ROLL_DELAY):
         midi.send(message)
         time.sleep(delay)
 
+def play_chord(messages):
+    set_active_chord_notes([message.note for message in messages])
+    roll_chord(messages)
+
+def stop_chord(messages):
+    midi.send(messages)
+    active_chord_notes.clear()
+
 while True:
     keybow.update()
-    update_black_key_leds(time.monotonic() * OSCILLATE_SPEED)
+    update_note_leds(time.monotonic() * OSCILLATE_SPEED)
 
 #stops hanging notes 
 
@@ -104,6 +122,7 @@ while True:
                        NoteOff(84, 0),
                        NoteOff(85, 0),
                        NoteOff(86, 0)])
+            active_chord_notes.clear()
 
 
     if keys[14].pressed:
@@ -138,6 +157,7 @@ while True:
                        NoteOff(84, 0),
                        NoteOff(85, 0),
                        NoteOff(86, 0)])
+            active_chord_notes.clear()
 
 
     if keys[13].pressed:
@@ -172,6 +192,7 @@ while True:
                        NoteOff(84, 0),
                        NoteOff(85, 0),
                        NoteOff(86, 0)])
+            active_chord_notes.clear()
 
 
     if keys[12].pressed:
@@ -206,6 +227,7 @@ while True:
                        NoteOff(84, 0),
                        NoteOff(85, 0),
                        NoteOff(86, 0)])
+            active_chord_notes.clear()
 
                       #Single note
     if not keys[15].pressed and not keys[14].pressed \
@@ -484,14 +506,14 @@ while True:
         @keybow.on_press(C)
         def press_handler(C):
 
-            roll_chord([NoteOn(60, 127),
+            play_chord([NoteOn(60, 127),
                        NoteOn(64, 127),
                        NoteOn(67, 127)])
 
         @keybow.on_release(C)
         def release_handler(C):
 
-            midi.send([NoteOff(60, 0),
+            stop_chord([NoteOff(60, 0),
                        NoteOff(64, 0),
                        NoteOff(67, 0)])
 
@@ -499,14 +521,14 @@ while True:
         @keybow.on_press(Db)
         def press_handler(Db):
 
-            roll_chord([NoteOn(61, 127),
+            play_chord([NoteOn(61, 127),
                        NoteOn(65, 127),
                        NoteOn(68, 127)])
 
         @keybow.on_release(Db)
         def release_handler(Db):
 
-            midi.send([NoteOff(61, 0),
+            stop_chord([NoteOff(61, 0),
                        NoteOff(65, 0),
                        NoteOff(68, 0)])
 
@@ -514,14 +536,14 @@ while True:
         @keybow.on_press(D)
         def press_handler(D):
 
-            roll_chord([NoteOn(62, 127),
+            play_chord([NoteOn(62, 127),
                        NoteOn(66, 127),
                        NoteOn(69, 127)])
 
         @keybow.on_release(D)
         def release_handler(D):
 
-            midi.send([NoteOff(62, 0),
+            stop_chord([NoteOff(62, 0),
                        NoteOff(66, 0),
                        NoteOff(69, 0)])
 
@@ -529,14 +551,14 @@ while True:
         @keybow.on_press(Eb)
         def press_handler(Eb):
 
-            roll_chord([NoteOn(63, 127),
+            play_chord([NoteOn(63, 127),
                        NoteOn(67, 127),
                        NoteOn(70, 127)])
 
         @keybow.on_release(Eb)
         def release_handler(Eb):
 
-            midi.send([NoteOff(63, 0),
+            stop_chord([NoteOff(63, 0),
                        NoteOff(67, 0),
                        NoteOff(70, 0)])
 
@@ -544,14 +566,14 @@ while True:
         @keybow.on_press(E)
         def press_handler(E):
 
-            roll_chord([NoteOn(64, 127),
+            play_chord([NoteOn(64, 127),
                        NoteOn(68, 127),
                        NoteOn(71, 127)])
 
         @keybow.on_release(E)
         def release_handler(E):
 
-            midi.send([NoteOff(64, 0),
+            stop_chord([NoteOff(64, 0),
                        NoteOff(68, 0),
                        NoteOff(71, 0)])
 
@@ -559,14 +581,14 @@ while True:
         @keybow.on_press(F)
         def press_handler(F):
 
-            roll_chord([NoteOn(65, 127),
+            play_chord([NoteOn(65, 127),
                        NoteOn(69, 127),
                        NoteOn(72, 127)])
 
         @keybow.on_release(F)
         def release_handler(F):
 
-            midi.send([NoteOff(65, 0),
+            stop_chord([NoteOff(65, 0),
                        NoteOff(69, 0),
                        NoteOff(72, 0)])
 
@@ -574,14 +596,14 @@ while True:
         @keybow.on_press(Gb)
         def press_handler(Gb):
 
-            roll_chord([NoteOn(66, 127),
+            play_chord([NoteOn(66, 127),
                        NoteOn(70, 127),
                        NoteOn(73, 127)])
 
         @keybow.on_release(Gb)
         def release_handler(Gb):
 
-            midi.send([NoteOff(66, 0),
+            stop_chord([NoteOff(66, 0),
                        NoteOff(70, 0),
                        NoteOff(73, 0)])
 
@@ -589,14 +611,14 @@ while True:
         @keybow.on_press(G)
         def press_handler(G):
 
-            roll_chord([NoteOn(67, 127),
+            play_chord([NoteOn(67, 127),
                        NoteOn(71, 127),
                        NoteOn(74, 127)])
 
         @keybow.on_release(G)
         def release_handler(G):
 
-            midi.send([NoteOff(67, 0),
+            stop_chord([NoteOff(67, 0),
                        NoteOff(71, 0),
                        NoteOff(74, 0)])
 
@@ -604,14 +626,14 @@ while True:
         @keybow.on_press(Ab)
         def press_handler(Ab):
 
-            roll_chord([NoteOn(68, 127),
+            play_chord([NoteOn(68, 127),
                        NoteOn(72, 127),
                        NoteOn(75, 127)])
 
         @keybow.on_release(Ab)
         def release_handler(Ab):
 
-            midi.send([NoteOff(68, 0),
+            stop_chord([NoteOff(68, 0),
                        NoteOff(72, 0),
                        NoteOff(75, 0)])
 
@@ -619,14 +641,14 @@ while True:
         @keybow.on_press(A)
         def press_handler(A):
 
-            roll_chord([NoteOn(69, 127),
+            play_chord([NoteOn(69, 127),
                        NoteOn(73, 127),
                        NoteOn(76, 127)])
 
         @keybow.on_release(A)
         def release_handler(A):
 
-            midi.send([NoteOff(69, 0),
+            stop_chord([NoteOff(69, 0),
                        NoteOff(73, 0),
                        NoteOff(76, 0)])
 
@@ -634,14 +656,14 @@ while True:
         @keybow.on_press(Bb)
         def press_handler(Bb):
 
-            roll_chord([NoteOn(70, 127),
+            play_chord([NoteOn(70, 127),
                        NoteOn(74, 127),
                        NoteOn(77, 127)])
 
         @keybow.on_release(Bb)
         def release_handler(Bb):
 
-            midi.send([NoteOff(70, 0),
+            stop_chord([NoteOff(70, 0),
                        NoteOff(74, 0),
                        NoteOff(77, 0)])
 
@@ -649,14 +671,14 @@ while True:
         @keybow.on_press(B)
         def press_handler(B):
 
-            roll_chord([NoteOn(71, 127),
+            play_chord([NoteOn(71, 127),
                        NoteOn(75, 127),
                        NoteOn(78, 127)])
 
         @keybow.on_release(B)
         def release_handler(B):
 
-            midi.send([NoteOff(71, 0),
+            stop_chord([NoteOff(71, 0),
                        NoteOff(75, 0),
                        NoteOff(78, 0)])
 
@@ -668,14 +690,14 @@ while True:
         @keybow.on_press(C)
         def press_handler(C):
 
-            roll_chord([NoteOn(60, 127),
+            play_chord([NoteOn(60, 127),
                        NoteOn(63, 127),
                        NoteOn(67, 127)])
 
         @keybow.on_release(C)
         def release_handler(C):
 
-            midi.send([NoteOff(60, 0),
+            stop_chord([NoteOff(60, 0),
                        NoteOff(63, 0),
                        NoteOff(67, 0)])
 
@@ -683,28 +705,28 @@ while True:
         @keybow.on_press(Db)
         def press_handler(Db):
 
-            roll_chord([NoteOn(61, 127),
+            play_chord([NoteOn(61, 127),
                        NoteOn(64, 127),
                        NoteOn(68, 127)])
 
         @keybow.on_release(Db)
         def release_handler(Db):
 
-            midi.send([NoteOff(61, 0),
+            stop_chord([NoteOff(61, 0),
                        NoteOff(64, 0),
                        NoteOff(68, 0)])
         D = keys[2]
         @keybow.on_press(D)
         def press_handler(D):
 
-            roll_chord([NoteOn(62, 127),
+            play_chord([NoteOn(62, 127),
                        NoteOn(65, 127),
                        NoteOn(69, 127)])
 
         @keybow.on_release(D)
         def release_handler(D):
 
-            midi.send([NoteOff(62, 0),
+            stop_chord([NoteOff(62, 0),
                        NoteOff(65, 0),
                        NoteOff(69, 0)])
 
@@ -712,14 +734,14 @@ while True:
         @keybow.on_press(Eb)
         def press_handler(Eb):
 
-            roll_chord([NoteOn(63, 127),
+            play_chord([NoteOn(63, 127),
                        NoteOn(66, 127),
                        NoteOn(70, 127)])
 
         @keybow.on_release(Eb)
         def release_handler(Eb):
 
-            midi.send([NoteOff(63, 0),
+            stop_chord([NoteOff(63, 0),
                        NoteOff(66, 0),
                        NoteOff(70, 0)])
 
@@ -727,14 +749,14 @@ while True:
         @keybow.on_press(E)
         def press_handler(E):
 
-            roll_chord([NoteOn(64, 127),
+            play_chord([NoteOn(64, 127),
                        NoteOn(67, 127),
                        NoteOn(71, 127)])
 
         @keybow.on_release(E)
         def release_handler(E):
 
-            midi.send([NoteOff(64, 0),
+            stop_chord([NoteOff(64, 0),
                        NoteOff(67, 0),
                        NoteOff(71, 0)])
 
@@ -742,14 +764,14 @@ while True:
         @keybow.on_press(F)
         def press_handler(F):
 
-            roll_chord([NoteOn(65, 127),
+            play_chord([NoteOn(65, 127),
                        NoteOn(68, 127),
                        NoteOn(72, 127)])
 
         @keybow.on_release(F)
         def release_handler(F):
 
-            midi.send([NoteOff(65, 0),
+            stop_chord([NoteOff(65, 0),
                        NoteOff(68, 0),
                        NoteOff(72, 0)])
 
@@ -757,14 +779,14 @@ while True:
         @keybow.on_press(Gb)
         def press_handler(Gb):
 
-            roll_chord([NoteOn(66, 127),
+            play_chord([NoteOn(66, 127),
                        NoteOn(69, 127),
                        NoteOn(73, 127)])
 
         @keybow.on_release(Gb)
         def release_handler(Gb):
 
-            midi.send([NoteOff(66, 0),
+            stop_chord([NoteOff(66, 0),
                        NoteOff(69, 0),
                        NoteOff(73, 0)])
 
@@ -772,14 +794,14 @@ while True:
         @keybow.on_press(G)
         def press_handler(G):
 
-            roll_chord([NoteOn(67, 127),
+            play_chord([NoteOn(67, 127),
                        NoteOn(70, 127),
                        NoteOn(74, 127)])
 
         @keybow.on_release(G)
         def release_handler(G):
 
-            midi.send([NoteOff(67, 0),
+            stop_chord([NoteOff(67, 0),
                        NoteOff(70, 0),
                        NoteOff(74, 0)])
 
@@ -787,14 +809,14 @@ while True:
         @keybow.on_press(Ab)
         def press_handler(Ab):
 
-            roll_chord([NoteOn(68, 127),
+            play_chord([NoteOn(68, 127),
                        NoteOn(71, 127),
                        NoteOn(75, 127)])
 
         @keybow.on_release(Ab)
         def release_handler(Ab):
 
-            midi.send([NoteOff(68, 0),
+            stop_chord([NoteOff(68, 0),
                        NoteOff(71, 0),
                        NoteOff(75, 0)])
 
@@ -802,14 +824,14 @@ while True:
         @keybow.on_press(A)
         def press_handler(A):
 
-            roll_chord([NoteOn(69, 127),
+            play_chord([NoteOn(69, 127),
                        NoteOn(72, 127),
                        NoteOn(76, 127)])
 
         @keybow.on_release(A)
         def release_handler(A):
 
-            midi.send([NoteOff(69, 0),
+            stop_chord([NoteOff(69, 0),
                        NoteOff(72, 0),
                        NoteOff(76, 0)])
 
@@ -817,14 +839,14 @@ while True:
         @keybow.on_press(Bb)
         def press_handler(Bb):
 
-            roll_chord([NoteOn(70, 127),
+            play_chord([NoteOn(70, 127),
                        NoteOn(73, 127),
                        NoteOn(77, 127)])
 
         @keybow.on_release(Bb)
         def release_handler(Bb):
 
-            midi.send([NoteOff(70, 0),
+            stop_chord([NoteOff(70, 0),
                        NoteOff(73, 0),
                        NoteOff(77, 0)])
 
@@ -832,14 +854,14 @@ while True:
         @keybow.on_press(B)
         def press_handler(B):
 
-            roll_chord([NoteOn(71, 127),
+            play_chord([NoteOn(71, 127),
                        NoteOn(74, 127),
                        NoteOn(78, 127)])
 
         @keybow.on_release(B)
         def release_handler(B):
 
-            midi.send([NoteOff(71, 0),
+            stop_chord([NoteOff(71, 0),
                        NoteOff(74, 0),
                        NoteOff(78, 0)])
 
@@ -851,14 +873,14 @@ while True:
         @keybow.on_press(C)
         def press_handler(C):
 
-            roll_chord([NoteOn(60, 127),
+            play_chord([NoteOn(60, 127),
                        NoteOn(64, 127),
                        NoteOn(71, 127)])
 
         @keybow.on_release(C)
         def release_handler(C):
 
-            midi.send([NoteOff(60, 0),
+            stop_chord([NoteOff(60, 0),
                        NoteOff(64, 0),
                        NoteOff(71, 0)])
 
@@ -866,14 +888,14 @@ while True:
         @keybow.on_press(Db)
         def press_handler(Db):
 
-            roll_chord([NoteOn(61, 127),
+            play_chord([NoteOn(61, 127),
                        NoteOn(65, 127),
                        NoteOn(72, 127)])
        
         @keybow.on_release(Db)
         def release_handler(Db):
 
-            midi.send([NoteOff(61, 0),
+            stop_chord([NoteOff(61, 0),
                        NoteOff(65, 0),
                        NoteOff(72, 0)])
 
@@ -881,14 +903,14 @@ while True:
         @keybow.on_press(D)
         def press_handler(D):
 
-            roll_chord([NoteOn(62, 127),
+            play_chord([NoteOn(62, 127),
                        NoteOn(66, 127),
                        NoteOn(73, 127)])
        
         @keybow.on_release(D)
         def release_handler(D):
 
-            midi.send([NoteOff(62, 0),
+            stop_chord([NoteOff(62, 0),
                        NoteOff(66, 0),
                        NoteOff(73, 0)])
 
@@ -896,14 +918,14 @@ while True:
         @keybow.on_press(Eb)
         def press_handler(Eb):
 
-            roll_chord([NoteOn(63, 127),
+            play_chord([NoteOn(63, 127),
                        NoteOn(67, 127),
                        NoteOn(74, 127)])
        
         @keybow.on_release(Eb)
         def release_handler(Eb):
 
-            midi.send([NoteOff(63, 0),
+            stop_chord([NoteOff(63, 0),
                        NoteOff(67, 0),
                        NoteOff(74, 0)])
 
@@ -911,14 +933,14 @@ while True:
         @keybow.on_press(E)
         def press_handler(E):
 
-            roll_chord([NoteOn(64, 127),
+            play_chord([NoteOn(64, 127),
                        NoteOn(68, 127),
                        NoteOn(75, 127)])
 
         @keybow.on_release(E)
         def release_handler(E):
 
-            midi.send([NoteOff(64, 0),
+            stop_chord([NoteOff(64, 0),
                        NoteOff(68, 0),
                        NoteOff(75, 0)])
 
@@ -926,14 +948,14 @@ while True:
         @keybow.on_press(F)
         def press_handler(F):
 
-            roll_chord([NoteOn(65, 127),
+            play_chord([NoteOn(65, 127),
                        NoteOn(69, 127),
                        NoteOn(76, 127)])
        
         @keybow.on_release(F)
         def release_handler(F):
 
-            midi.send([NoteOff(65, 0),
+            stop_chord([NoteOff(65, 0),
                        NoteOff(69, 0),
                        NoteOff(76, 0)])
 
@@ -941,14 +963,14 @@ while True:
         @keybow.on_press(Gb)
         def press_handler(Gb):
 
-            roll_chord([NoteOn(66, 127),
+            play_chord([NoteOn(66, 127),
                        NoteOn(70, 127),
                        NoteOn(77, 127)])
        
         @keybow.on_release(Gb)
         def release_handler(Gb):
 
-            midi.send([NoteOff(66, 0),
+            stop_chord([NoteOff(66, 0),
                        NoteOff(70, 0),
                        NoteOff(77, 0)])
 
@@ -956,14 +978,14 @@ while True:
         @keybow.on_press(G)
         def press_handler(G):
 
-            roll_chord([NoteOn(67, 127),
+            play_chord([NoteOn(67, 127),
                        NoteOn(71, 127),
                        NoteOn(78, 127)])
        
         @keybow.on_release(G)
         def release_handler(G):
 
-            midi.send([NoteOff(67, 0),
+            stop_chord([NoteOff(67, 0),
                        NoteOff(71, 0),
                        NoteOff(78, 0)])
 
@@ -971,14 +993,14 @@ while True:
         @keybow.on_press(Ab)
         def press_handler(Ab):
 
-            roll_chord([NoteOn(68, 127),
+            play_chord([NoteOn(68, 127),
                        NoteOn(72, 127),
                        NoteOn(79, 127)])
        
         @keybow.on_release(Ab)
         def release_handler(Ab):
 
-            midi.send([NoteOff(68, 0),
+            stop_chord([NoteOff(68, 0),
                        NoteOff(72, 0),
                        NoteOff(79, 0)])
 
@@ -986,14 +1008,14 @@ while True:
         @keybow.on_press(A)
         def press_handler(A):
 
-            roll_chord([NoteOn(69, 127),
+            play_chord([NoteOn(69, 127),
                        NoteOn(73, 127),
                        NoteOn(80, 127)])
 
         @keybow.on_release(A)
         def release_handler(A):
 
-            midi.send([NoteOff(69, 0),
+            stop_chord([NoteOff(69, 0),
                        NoteOff(73, 0),
                        NoteOff(80, 0)])
 
@@ -1001,14 +1023,14 @@ while True:
         @keybow.on_press(Bb)
         def press_handler(Bb):
 
-            roll_chord([NoteOn(70, 127),
+            play_chord([NoteOn(70, 127),
                        NoteOn(74, 127),
                        NoteOn(81, 127)])
 
         @keybow.on_release(Bb)
         def release_handler(Bb):
 
-            midi.send([NoteOff(70, 0),
+            stop_chord([NoteOff(70, 0),
                        NoteOff(74, 0),
                        NoteOff(81, 0)])
 
@@ -1016,14 +1038,14 @@ while True:
         @keybow.on_press(B)
         def press_handler(B):
 
-            roll_chord([NoteOn(71, 127),
+            play_chord([NoteOn(71, 127),
                        NoteOn(75, 127),
                        NoteOn(82, 127)])
 
         @keybow.on_release(B)
         def release_handler(B):
 
-            midi.send([NoteOff(71, 0),
+            stop_chord([NoteOff(71, 0),
                        NoteOff(75, 0),
                        NoteOff(82, 0)])
 
@@ -1034,14 +1056,14 @@ while True:
         @keybow.on_press(C)
         def press_handler(C):
 
-            roll_chord([NoteOn(60, 127),
+            play_chord([NoteOn(60, 127),
                        NoteOn(63, 127),
                        NoteOn(70, 127)])
 
         @keybow.on_release(C)
         def release_handler(C):
 
-            midi.send([NoteOff(60, 0),
+            stop_chord([NoteOff(60, 0),
                        NoteOff(63, 0),
                        NoteOff(70, 0)])
 
@@ -1049,14 +1071,14 @@ while True:
         @keybow.on_press(Db)
         def press_handler(Db):
 
-            roll_chord([NoteOn(61, 127),
+            play_chord([NoteOn(61, 127),
                        NoteOn(64, 127),
                        NoteOn(71, 127)])
        
         @keybow.on_release(Db)
         def release_handler(Db):
 
-            midi.send([NoteOff(61, 0),
+            stop_chord([NoteOff(61, 0),
                        NoteOff(64, 0),
                        NoteOff(71, 0)])
 
@@ -1064,14 +1086,14 @@ while True:
         @keybow.on_press(D)
         def press_handler(D):
 
-            roll_chord([NoteOn(62, 127),
+            play_chord([NoteOn(62, 127),
                        NoteOn(65, 127),
                        NoteOn(72, 127)])
 
         @keybow.on_release(D)
         def release_handler(D):
 
-            midi.send([NoteOff(62, 0),
+            stop_chord([NoteOff(62, 0),
                        NoteOff(65, 0),
                        NoteOff(72, 0)])
 
@@ -1079,14 +1101,14 @@ while True:
         @keybow.on_press(Eb)
         def press_handler(Eb):
 
-            roll_chord([NoteOn(63, 127),
+            play_chord([NoteOn(63, 127),
                        NoteOn(66, 127),
                        NoteOn(73, 127)])
 
         @keybow.on_release(Eb)
         def release_handler(Eb):
 
-            midi.send([NoteOff(63, 0),
+            stop_chord([NoteOff(63, 0),
                        NoteOff(66, 0),
                        NoteOff(73, 0)])
 
@@ -1094,14 +1116,14 @@ while True:
         @keybow.on_press(E)
         def press_handler(E):
 
-            roll_chord([NoteOn(64, 127),
+            play_chord([NoteOn(64, 127),
                        NoteOn(67, 127),
                        NoteOn(74, 127)])
 
         @keybow.on_release(E)
         def release_handler(E):
 
-            midi.send([NoteOff(64, 0),
+            stop_chord([NoteOff(64, 0),
                        NoteOff(67, 0),
                        NoteOff(74, 0)])
 
@@ -1109,14 +1131,14 @@ while True:
         @keybow.on_press(F)
         def press_handler(F):
 
-            roll_chord([NoteOn(65, 127),
+            play_chord([NoteOn(65, 127),
                        NoteOn(68, 127),
                        NoteOn(75, 127)])
 
         @keybow.on_release(F)
         def release_handler(F):
 
-            midi.send([NoteOff(65, 0),
+            stop_chord([NoteOff(65, 0),
                        NoteOff(68, 0),
                        NoteOff(75, 0)])
 
@@ -1124,14 +1146,14 @@ while True:
         @keybow.on_press(Gb)
         def press_handler(Gb):
 
-            roll_chord([NoteOn(66, 127),
+            play_chord([NoteOn(66, 127),
                        NoteOn(69, 127),
                        NoteOn(76, 127)])
 
         @keybow.on_release(Gb)
         def release_handler(Gb):
 
-            midi.send([NoteOff(66, 0),
+            stop_chord([NoteOff(66, 0),
                        NoteOff(69, 0),
                        NoteOff(76, 0)])
 
@@ -1139,14 +1161,14 @@ while True:
         @keybow.on_press(G)
         def press_handler(G):
 
-            roll_chord([NoteOn(67, 127),
+            play_chord([NoteOn(67, 127),
                        NoteOn(70, 127),
                        NoteOn(77, 127)])
 
         @keybow.on_release(G)
         def release_handler(G):
 
-            midi.send([NoteOff(67, 0),
+            stop_chord([NoteOff(67, 0),
                        NoteOff(70, 0),
                        NoteOff(77, 0)])
 
@@ -1154,14 +1176,14 @@ while True:
         @keybow.on_press(Ab)
         def press_handler(Ab):
 
-            roll_chord([NoteOn(68, 127),
+            play_chord([NoteOn(68, 127),
                        NoteOn(71, 127),
                        NoteOn(78, 127)])
 
         @keybow.on_release(Ab)
         def release_handler(Ab):
 
-            midi.send([NoteOff(68, 0),
+            stop_chord([NoteOff(68, 0),
                        NoteOff(71, 0),
                        NoteOff(78, 0)])
 
@@ -1169,14 +1191,14 @@ while True:
         @keybow.on_press(A)
         def press_handler(A):
 
-            roll_chord([NoteOn(69, 127),
+            play_chord([NoteOn(69, 127),
                        NoteOn(72, 127),
                        NoteOn(79, 127)])
 
         @keybow.on_release(A)
         def release_handler(A):
 
-            midi.send([NoteOff(69, 0),
+            stop_chord([NoteOff(69, 0),
                        NoteOff(72, 0),
                        NoteOff(79, 0)])
 
@@ -1184,14 +1206,14 @@ while True:
         @keybow.on_press(Bb)
         def press_handler(Bb):
 
-            roll_chord([NoteOn(70, 127),
+            play_chord([NoteOn(70, 127),
                        NoteOn(73, 127),
                        NoteOn(80, 127)])
 
         @keybow.on_release(Bb)
         def release_handler(Bb):
 
-            midi.send([NoteOff(70, 0),
+            stop_chord([NoteOff(70, 0),
                        NoteOff(73, 0),
                        NoteOff(80, 0)])
 
@@ -1199,13 +1221,13 @@ while True:
         @keybow.on_press(B)
         def press_handler(B):
 
-            roll_chord([NoteOn(71, 127),
+            play_chord([NoteOn(71, 127),
                        NoteOn(74, 127),
                        NoteOn(81, 127)])
 
         @keybow.on_release(B)
         def release_handler(B):
 
-            midi.send([NoteOff(71, 0),
+            stop_chord([NoteOff(71, 0),
                        NoteOff(74, 0),
                        NoteOff(81, 0)])
