@@ -1,3 +1,4 @@
+import math
 import time
 time.sleep(5)
 from keybow2040 import Keybow2040
@@ -21,6 +22,24 @@ def set_led_scaled(index, red, green, blue):
         int(green * BRIGHTNESS_SCALE),
         int(blue * BRIGHTNESS_SCALE),
     )
+
+BLACK_KEY_INDICES = (1, 3, 6, 8, 10)
+OSCILLATE_MIN = 10
+OSCILLATE_MAX = 140
+OSCILLATE_SPEED = 2.2
+
+def oscillating_channel(time_value, phase):
+    span = OSCILLATE_MAX - OSCILLATE_MIN
+    return OSCILLATE_MIN + int(span * (math.sin(time_value + phase) + 1) / 2)
+
+def update_black_key_leds(time_value):
+    for index in BLACK_KEY_INDICES:
+        set_led_scaled(
+            index,
+            oscillating_channel(time_value, 0.0),
+            oscillating_channel(time_value, 2.1),
+            oscillating_channel(time_value, 4.2),
+        )
 
 set_led_scaled(0, 100, 100, 100)
 set_led_scaled(1, 50, 100, 10)
@@ -49,6 +68,7 @@ def roll_chord(messages, delay=ROLL_DELAY):
 
 while True:
     keybow.update()
+    update_black_key_leds(time.monotonic() * OSCILLATE_SPEED)
 
 #stops hanging notes 
 
