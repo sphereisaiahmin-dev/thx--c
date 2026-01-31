@@ -32,7 +32,7 @@ BASE_NOTE_COLOR = (BASE_NOTE_WHITE, BASE_NOTE_WHITE, BASE_NOTE_WHITE)
 ALT_ACTIVE_COLOR = (0, 0, 255)
 ALT_INACTIVE_COLOR = BASE_NOTE_COLOR
 
-BASE_NOTE_OFFSET = -12
+BASE_NOTE_OFFSET = 0
 ALT_TOGGLE_WINDOW = 0.45
 
 VELOCITY_LEVELS = (127, 90, 60)
@@ -43,8 +43,13 @@ VELOCITY_COLORS = (
 )
 
 BASE_NOTES = tuple(range(60, 72))
-EMERGENCY_NOTE_MIN = 60 + BASE_NOTE_OFFSET - 12
-EMERGENCY_NOTE_MAX = 86 + BASE_NOTE_OFFSET + 12
+MIN_OCTAVE_OFFSET = -36
+MAX_OCTAVE_OFFSET = 36
+MAX_CHORD_INTERVAL = 11
+EMERGENCY_NOTE_MIN = min(BASE_NOTES) + BASE_NOTE_OFFSET + MIN_OCTAVE_OFFSET
+EMERGENCY_NOTE_MAX = (
+    max(BASE_NOTES) + BASE_NOTE_OFFSET + MAX_OCTAVE_OFFSET + MAX_CHORD_INTERVAL
+)
 EMERGENCY_NOTE_RANGE = range(EMERGENCY_NOTE_MIN, EMERGENCY_NOTE_MAX + 1)
 
 active_chord_notes = []
@@ -75,6 +80,11 @@ def note_to_key_index(note):
 
 def current_note_offset():
     return BASE_NOTE_OFFSET + octave_offset
+
+
+def adjust_octave_offset(step):
+    global octave_offset
+    octave_offset = max(MIN_OCTAVE_OFFSET, min(MAX_OCTAVE_OFFSET, octave_offset + step))
 
 
 def send_midi(message):
@@ -119,11 +129,11 @@ def refresh_active_chord_notes():
 
 def update_modifier_leds(time_value):
     if alt_mode_active:
-        up_active = octave_offset == 12
-        down_active = octave_offset == -12
-        up_color = ALT_ACTIVE_COLOR if up_active or keys[OCTAVE_UP_KEY_INDEX].pressed else ALT_INACTIVE_COLOR
+        up_color = (
+            ALT_ACTIVE_COLOR if keys[OCTAVE_UP_KEY_INDEX].pressed else ALT_INACTIVE_COLOR
+        )
         down_color = (
-            ALT_ACTIVE_COLOR if down_active or keys[OCTAVE_DOWN_KEY_INDEX].pressed else ALT_INACTIVE_COLOR
+            ALT_ACTIVE_COLOR if keys[OCTAVE_DOWN_KEY_INDEX].pressed else ALT_INACTIVE_COLOR
         )
         exit_color = (
             ALT_ACTIVE_COLOR if keys[ALT_TOGGLE_KEY_INDEX].pressed else ALT_INACTIVE_COLOR
@@ -172,7 +182,7 @@ def emergency_note_off():
 
 def chord_intervals():
     if alt_mode_active:
-        return None
+        return (0,)
     if keys[15].pressed and not keys[14].pressed and not keys[13].pressed and not keys[12].pressed:
         return (0, 4, 7)
     if not keys[15].pressed and keys[14].pressed and not keys[13].pressed and not keys[12].pressed:
@@ -186,8 +196,6 @@ def chord_intervals():
 
 def handle_note_press(key_index, base_note):
     global last_alt_press_time
-    if alt_mode_active:
-        return
     last_alt_press_time = None
     intervals = chord_intervals()
     if intervals is None:
@@ -204,8 +212,6 @@ def handle_note_press(key_index, base_note):
 
 
 def handle_note_release(key_index):
-    if alt_mode_active:
-        return
     note_numbers = active_notes.pop(key_index, None)
     if not note_numbers:
         return
@@ -234,9 +240,9 @@ def handle_alt_modifier_press(index):
     if not alt_mode_active:
         return
     if index == OCTAVE_UP_KEY_INDEX:
-        octave_offset = 0 if octave_offset == 12 else 12
+        adjust_octave_offset(12)
     elif index == OCTAVE_DOWN_KEY_INDEX:
-        octave_offset = 0 if octave_offset == -12 else -12
+        adjust_octave_offset(-12)
     elif index == VELOCITY_KEY_INDEX:
         velocity_index = (velocity_index + 1) % len(VELOCITY_LEVELS)
 
