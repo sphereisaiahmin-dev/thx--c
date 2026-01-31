@@ -1,7 +1,8 @@
 # Firmware updater workflow
 
 This repo now ships a single-file GUI updater that flashes the CircuitPython
-filesystem over USB serial (no BOOTSEL or drag-and-drop required).
+filesystem over USB serial (no BOOTSEL or drag-and-drop required). The updater
+auto-runs when opened, so non-technical users can just double-click it.
 
 ## Build the updater
 
@@ -14,11 +15,14 @@ filesystem over USB serial (no BOOTSEL or drag-and-drop required).
 
 ## Distribute the updater
 
-Give end users the single `thx_update.py` file. When they run it, it:
+Give end users the single `thx_update.py` file. When they open it, it:
 
-- Opens a simple GUI with a progress bar.
-- Detects the Pico via `mpremote connect auto`.
+- Opens a simple GUI with a progress bar and starts updating automatically.
+- Installs the small `mpremote` helper automatically if needed.
+- Detects the Pico via `python -m mpremote connect auto`.
 - Pushes `code.py`, `boot.py`, `settings.toml`, and the entire `lib/` folder.
+
+If users need to run it again, there is an "Update Again" button in the window.
 
 ## Device behavior
 

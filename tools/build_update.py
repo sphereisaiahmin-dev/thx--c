@@ -18,10 +18,12 @@ from __future__ import annotations
 
 import base64
 import io
+import importlib.util
 import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
 import threading
 import tkinter as tk
@@ -47,8 +49,40 @@ def list_files(root: Path) -> list[Path]:
 
 
 def run_mpremote(args: list[str]) -> subprocess.CompletedProcess[str]:
-    cmd = ["mpremote", "connect", "auto"] + args
+    cmd = [sys.executable, "-m", "mpremote", "connect", "auto"] + args
     return subprocess.run(cmd, capture_output=True, text=True)
+
+
+def ensure_mpremote() -> bool:
+    if importlib.util.find_spec("mpremote") is not None:
+        return True
+
+    root = tk.Tk()
+    root.withdraw()
+    should_install = messagebox.askyesno(
+        "Install updater helper",
+        "This updater needs a small helper (mpremote) to talk to the device.\n"
+        "Click Yes to install it automatically.",
+    )
+    if not should_install:
+        root.destroy()
+        return False
+
+    result = subprocess.run(
+        [sys.executable, "-m", "pip", "install", "--user", "mpremote"],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        messagebox.showerror(
+            "Install failed",
+            result.stderr.strip() or result.stdout.strip() or "pip install failed.",
+        )
+        root.destroy()
+        return False
+
+    root.destroy()
+    return importlib.util.find_spec("mpremote") is not None
 
 
 def ensure_remote_dirs(files: list[Path], root: Path) -> list[str]:
@@ -103,14 +137,7 @@ def build_gui() -> tuple[tk.Tk, ttk.Progressbar, tk.StringVar, ttk.Button]:
 
 
 def main() -> int:
-    if shutil.which("mpremote") is None:
-        root = tk.Tk()
-        root.withdraw()
-        messagebox.showerror(
-            "Missing mpremote",
-            "Please install mpremote first (pip install mpremote).",
-        )
-        root.destroy()
+    if not ensure_mpremote():
         return 1
 
     root, progress, status_var, button = build_gui()
@@ -144,7 +171,8 @@ def main() -> int:
         set_status("Connecting to device...")
         threading.Thread(target=perform_update, daemon=True).start()
 
-    button.configure(command=on_click)
+    button.configure(command=on_click, text="Update Again")
+    root.after(200, on_click)
     root.mainloop()
     return 0
 
