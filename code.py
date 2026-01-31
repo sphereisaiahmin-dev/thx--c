@@ -35,7 +35,7 @@ ALT_INACTIVE_COLOR = BASE_NOTE_COLOR
 BASE_NOTE_OFFSET = 0
 ALT_TOGGLE_WINDOW = 0.45
 
-VELOCITY_LEVELS = (127, 90, 60)
+VELOCITY_LEVELS = (127, 80, 40)
 VELOCITY_COLORS = (
     (255, 0, 0),
     (0, 255, 0),
@@ -145,9 +145,6 @@ def update_modifier_leds(time_value):
         return
 
     for offset, index in enumerate(MODIFIER_KEY_INDICES):
-        if index == VELOCITY_KEY_INDEX:
-            set_led_scaled(index, *VELOCITY_COLORS[velocity_index])
-            continue
         set_led_scaled(
             index,
             oscillating_channel(time_value, 0.6 + offset),
