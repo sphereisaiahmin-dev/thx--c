@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "chords": {
+    "default": [0],
+    "12": [0, 3, 10],
+    "13": [0, 4, 11],
+    "14": [0, 3, 7],
+    "15": [0, 4, 7]
+  },
+  "velocity_levels": [127, 80, 40],
+  "velocity_colors": [
+    [255, 0, 0],
+    [0, 255, 0],
+    [0, 0, 255]
+  ],
+  "leds": {
+    "brightness_scale": 0.9,
+    "base_note_color": [150, 150, 150],
+    "alt_active_color": [0, 0, 255],
+    "alt_inactive_color": [150, 150, 150],
+    "modifier_oscillate_min": 10,
+    "modifier_oscillate_max": 140,
+    "modifier_oscillate_speed": 2.2,
+    "static_key_colors": {}
+  },
+  "notes": {
+    "base_notes": [60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71],
+    "base_note_offset": 0,
+    "min_octave_offset": -36,
+    "max_octave_offset": 36
+  },
+  "alt_toggle_window": 0.45
+}
