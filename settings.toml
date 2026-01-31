@@ -1,0 +1,2 @@
+# Recovery key index used in boot.py for re-enabling CIRCUITPY.
+RECOVERY_KEY_INDEX = 15
